@@ -194,7 +194,7 @@ public class UnsignedBigInt {
         UnsignedBigInt one = new UnsignedBigInt(1);
         UnsignedBigInt two = new UnsignedBigInt(2);
         while(exp.biggerThan(zero)) {
-            System.out.println(exp);
+            //System.out.println(exp);
             UnsignedBigInt mod = exp.mod(two);
             if(mod.equals(one)) {
                 result = result.multiply(b).mod(m);
