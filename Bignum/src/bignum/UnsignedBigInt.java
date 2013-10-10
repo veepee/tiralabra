@@ -182,9 +182,27 @@ public class UnsignedBigInt {
      * @param m UnsignedBigInt containing modulus m
      * @return UnsignedBigInt whose value is (this^e mod m)
      */
-    public UnsignedBigInt modPow(UnsignedBigInt e, UnsignedBigInt m) {
+    /*public UnsignedBigInt modPow(UnsignedBigInt e, UnsignedBigInt m) {
         // TODO: implementation with exponentiation by squaring
         return this.pow(e).mod(m);
+    }*/
+    public UnsignedBigInt modPow(UnsignedBigInt e, UnsignedBigInt m) {
+        UnsignedBigInt b = new UnsignedBigInt(this);
+        UnsignedBigInt exp = new UnsignedBigInt(e);
+        UnsignedBigInt result = new UnsignedBigInt(1);
+        UnsignedBigInt zero = new UnsignedBigInt(0);
+        UnsignedBigInt one = new UnsignedBigInt(1);
+        UnsignedBigInt two = new UnsignedBigInt(2);
+        while(exp.biggerThan(zero)) {
+            System.out.println(exp);
+            UnsignedBigInt mod = exp.mod(two);
+            if(mod.equals(one)) {
+                result = result.multiply(b).mod(m);
+            }
+            exp.bits.shiftRight();
+            b = b.multiply(b).mod(m);
+        }
+        return result;
     }
     
     /**

@@ -79,9 +79,17 @@ public class BitArray {
     }
     
     public void shiftRight() {
-        // TODO CARRY
-        for(int i = 0; i < a.length; i++) {
-            a[i] >>= 1L;
+        int lowBit = 0;
+        int highBit = 0;
+        for(int i = a.length - 1; i >= 0; i--) {
+            highBit = lowBit;
+            lowBit = getBit(i * 64);
+            a[i] >>>= 1L;
+            setBit((i * 64) + 63, highBit);
+            
+            /*if(highBit > 0 && i == a.length - 1) {
+                expand(0);
+            }*/
         }
     }
     
