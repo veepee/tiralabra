@@ -14,7 +14,6 @@ Session.vim
 *.class
 
 # Package Files #
-*.jar
 *.war
 *.ear
 
@@ -22,7 +21,6 @@ Session.vim
 Bignum/nbproject/private/
 Bignum/build/
 Bignum/nbbuild/
-Bignum/dist/
 Bignum/nbdist/
 Bignum/nbactions.xml
 Bignum/nb-configuration.xml

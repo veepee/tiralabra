@@ -19,7 +19,8 @@ public class BitArray {
     }
     
     private void expand(int w) {
-        long[] newArray = new long[Math.max(a.length * 2, w + 1)];
+        int size = Math.max(a.length * 2, w + 1);
+        long[] newArray = new long[size];
         System.arraycopy(a, 0, newArray, 0, a.length);
         this.a = newArray;
     }
@@ -78,6 +79,21 @@ public class BitArray {
         }
     }
     
+    public void shiftLeft64() {
+        if(Math.floor(length() / 64.0f) >= a.length - 1) {
+            expand(0);
+        }
+        
+        long high = 0;
+        long low = 0;
+        
+        for(int i = 0; i < a.length; i++) {
+            low = high;
+            high = a[i];
+            a[i] = low;
+        }
+    }
+    
     public void shiftRight() {
         int lowBit = 0;
         int highBit = 0;
@@ -86,10 +102,6 @@ public class BitArray {
             lowBit = getBit(i * 64);
             a[i] >>>= 1L;
             setBit((i * 64) + 63, highBit);
-            
-            /*if(highBit > 0 && i == a.length - 1) {
-                expand(0);
-            }*/
         }
     }
     

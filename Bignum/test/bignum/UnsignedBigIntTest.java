@@ -67,7 +67,7 @@ public class UnsignedBigIntTest {
     @Test
     public void testModPow() {
         assertEquals(b.modPow(new UnsignedBigInt("4"), a), new UnsignedBigInt("3720510"));
-        //assertEquals(b.modPow(a, a), new UnsignedBigInt("1522756"));
+        assertEquals(b.modPow(a, a), new UnsignedBigInt("1522756"));
     }
     
     @Test

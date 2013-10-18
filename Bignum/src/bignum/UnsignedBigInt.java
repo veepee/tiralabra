@@ -6,6 +6,11 @@ package bignum;
  */
 public class UnsignedBigInt {
 
+    public static UnsignedBigInt ZERO = new UnsignedBigInt(0);
+    public static UnsignedBigInt ONE = new UnsignedBigInt(1);
+    public static UnsignedBigInt TWO = new UnsignedBigInt(2);
+    public static UnsignedBigInt TEN = new UnsignedBigInt(10);
+    
     /**
      * BitArray for storing the bits of this UnsignedBigInt in little-endian byte order
      */
@@ -27,10 +32,9 @@ public class UnsignedBigInt {
         this();
         
         UnsignedBigInt newBigInt = new UnsignedBigInt();
-        UnsignedBigInt ten = new UnsignedBigInt(10L);
         
         for(int i = 0; i < s.length(); i++) {
-            newBigInt = newBigInt.multiply(ten);
+            newBigInt = newBigInt.multiply(UnsignedBigInt.TEN);
             newBigInt = newBigInt.add(new UnsignedBigInt(Long.parseLong(s.charAt(i) + "")));
         }
     
@@ -69,7 +73,8 @@ public class UnsignedBigInt {
         UnsignedBigInt result = new UnsignedBigInt();
         
         int carry = 0;
-        for(int i = 0; i <= Math.max(this.bits.length(), b.bits.length()); i++) {
+        int max = Math.max(this.bits.length(), b.bits.length());
+        for(int i = 0; i <= max; i++) {
             int s = this.bits.getBit(i) + b.bits.getBit(i) + carry;
             carry = 0;
             if(s >= 2) {
@@ -182,27 +187,44 @@ public class UnsignedBigInt {
      * @param m UnsignedBigInt containing modulus m
      * @return UnsignedBigInt whose value is (this^e mod m)
      */
-    /*public UnsignedBigInt modPow(UnsignedBigInt e, UnsignedBigInt m) {
-        // TODO: implementation with exponentiation by squaring
-        return this.pow(e).mod(m);
-    }*/
     public UnsignedBigInt modPow(UnsignedBigInt e, UnsignedBigInt m) {
         UnsignedBigInt b = new UnsignedBigInt(this);
         UnsignedBigInt exp = new UnsignedBigInt(e);
-        UnsignedBigInt result = new UnsignedBigInt(1);
-        UnsignedBigInt zero = new UnsignedBigInt(0);
-        UnsignedBigInt one = new UnsignedBigInt(1);
-        UnsignedBigInt two = new UnsignedBigInt(2);
-        while(exp.biggerThan(zero)) {
-            //System.out.println(exp);
-            UnsignedBigInt mod = exp.mod(two);
-            if(mod.equals(one)) {
+        UnsignedBigInt result = new UnsignedBigInt(UnsignedBigInt.ONE);
+
+        while(exp.biggerThan(UnsignedBigInt.ZERO)) {
+            UnsignedBigInt mod = exp.mod(UnsignedBigInt.TWO);
+            if(mod.equals(UnsignedBigInt.ONE)) {
                 result = result.multiply(b).mod(m);
             }
             exp.bits.shiftRight();
             b = b.multiply(b).mod(m);
         }
         return result;
+    }
+
+    public UnsignedBigInt karatsuba(UnsignedBigInt b) {
+        int m = (int)Math.ceil(Math.min(this.bits.length(), b.bits.length()) / 2.0);
+        
+        if(m < 512) {
+            return this.multiply(b);
+        }
+        
+        // TODO: calculate B^m with left shifts instead of multiplications
+        UnsignedBigInt base = UnsignedBigInt.TWO.pow(new UnsignedBigInt(m));
+        UnsignedBigInt base2 = base.pow(UnsignedBigInt.TWO);
+
+        UnsignedBigInt[] x = this.divideAndRemainder(base);
+        UnsignedBigInt[] y = b.divideAndRemainder(base);
+
+        UnsignedBigInt z0 = x[1].karatsuba(y[1]);
+        UnsignedBigInt z2 = x[0].karatsuba(y[0]);
+        UnsignedBigInt z1 = ((x[0].add(x[1])).karatsuba(y[0].add(y[1]))).subtract(z2).subtract(z0);        
+
+        z2 = z2.multiply(base2);
+        z1 = z1.multiply(base);
+        
+        return z0.add(z1.add(z2));
     }
     
     /**
@@ -218,7 +240,12 @@ public class UnsignedBigInt {
             if(b.bits.getBit(i) > 0) {
                 temp = new UnsignedBigInt(this);
                 for(int j = 0; j < i; j++) {
-                    temp.bits.shiftLeft();
+                    if(i - j > 64) {
+                        temp.bits.shiftLeft64();
+                        j += 63;
+                    } else {
+                        temp.bits.shiftLeft();
+                    }
                 }
                 result = result.add(temp);
             }
@@ -233,12 +260,18 @@ public class UnsignedBigInt {
      * @return UnsignedBigInt whose value is (this^e)
      */
     public UnsignedBigInt pow(UnsignedBigInt e) {
-        // TODO: implementation with exponentiation by squaring
-        UnsignedBigInt one = new UnsignedBigInt(1L);
-        UnsignedBigInt result = new UnsignedBigInt(one);
-        for(UnsignedBigInt i = new UnsignedBigInt(); i.smallerThan(e); i = i.add(one)) {
-            result = result.multiply(this);
+        UnsignedBigInt b = new UnsignedBigInt(this);
+        UnsignedBigInt result = new UnsignedBigInt(UnsignedBigInt.ONE);
+
+        while(e.biggerThan(UnsignedBigInt.ZERO)) {
+            if(e.bits.getBit(0) > 0) {
+                result = result.multiply(b);
+                e.bits.setBit(0, 0);
+            }
+            b = b.multiply(b);
+            e.bits.shiftRight();
         }
+
         return result;
     }
     
@@ -270,7 +303,8 @@ public class UnsignedBigInt {
         UnsignedBigInt result = new UnsignedBigInt();
 
         int borrow = 0;
-        for(int i = 0; i <= Math.max(this.bits.length(), b.bits.length()); i++) {
+        int max = Math.max(this.bits.length(), b.bits.length());
+        for(int i = 0; i <= max; i++) {
             int s = this.bits.getBit(i) - b.bits.getBit(i) + borrow;
             borrow = 0;
             if(s < 0) {
@@ -288,17 +322,14 @@ public class UnsignedBigInt {
      * @return base10 string representation of this UnsignedBigInt
      */
     @Override
-    public String toString() {        
-        UnsignedBigInt zero = new UnsignedBigInt(0L);
-        UnsignedBigInt ten = new UnsignedBigInt(10L);
-        
+    public String toString() {              
         StringBuilder sb = new StringBuilder();
         
         UnsignedBigInt result[] = new UnsignedBigInt[2];
         result[0] = new UnsignedBigInt(this);
         
         do {
-            result = result[0].divideAndRemainder(ten);
+            result = result[0].divideAndRemainder(UnsignedBigInt.TEN);
             int n = 0;
             for(int i = 0; i < 4; i++) {
                 if(result[1].bits.getBit(i) > 0) {
@@ -306,7 +337,7 @@ public class UnsignedBigInt {
                 }
             }
             sb.append(n);
-        } while(result[0].biggerThan(zero));
+        } while(result[0].biggerThan(UnsignedBigInt.ZERO));
 
         return sb.reverse().toString();
     }
